@@ -1,26 +1,29 @@
-const openModal = (modalWindow) => {
-    modalWindow.classList.add('popup_is-animated', 'popup_is-opened');
-}
-
-const closeModal = (modalWindow) => {
-    modalWindow.classList.remove('popup_is-animated', 'popup_is-opened');
+const closeModalOnOverlay = (e) => {
+    if (e.target.classList.contains('popup')) {
+        closeModal(e.currentTarget);
+    }
 }
 
 const closeModalWithEsc = (e) => {
-    const modal = document.querySelector('.popup_is-opened');
-    if (modal && e.key === 'Escape') {
-        closeModal(modal)
-    } 
-}
-
-const closeModalOnOverlay = (e) => {
-    const modal = document.querySelector('.popup_is-opened');
-    
-    modal.addEventListener('click', (e) => {
-        if (e.target.classList.contains('popup')) {
-            closeModal(modal);
+    if (e.key === 'Escape') {
+        const openedPopup = document.querySelector('.popup_is-opened');
+        if (openedPopup) {
+            closeModal(openedPopup);
         }
-    })
+    }
+}
+const closeModal = (modalWindow) => {
+    modalWindow.classList.remove('popup_is-opened');
+    document.removeEventListener('keydown', closeModalWithEsc);
+    modalWindow.removeEventListener('mousedown', closeModalOnOverlay);
 }
 
-export { openModal, closeModal, closeModalWithEsc, closeModalOnOverlay }
+const openModal = (modalWindow) => {
+    modalWindow.classList.add('popup_is-opened');
+    document.addEventListener('keydown', closeModalWithEsc);
+    modalWindow.addEventListener('mousedown', closeModalOnOverlay);
+}
+
+
+
+export { openModal, closeModal }
