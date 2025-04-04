@@ -1,3 +1,5 @@
+import { resetValidation } from './formValidation.js'
+
 const closeModalOnOverlay = (e) => {
     if (e.target.classList.contains('popup')) {
         closeModal(e.currentTarget);
@@ -6,24 +8,31 @@ const closeModalOnOverlay = (e) => {
 
 const closeModalWithEsc = (e) => {
     if (e.key === 'Escape') {
-        const openedPopup = document.querySelector('.popup_is-opened');
+        const openedPopup = document.querySelector('.popup__is-opened');
         if (openedPopup) {
             closeModal(openedPopup);
         }
     }
 }
+
 const closeModal = (modalWindow) => {
-    modalWindow.classList.remove('popup_is-opened');
+    modalWindow.classList.remove('popup__is-opened');
     document.removeEventListener('keydown', closeModalWithEsc);
     modalWindow.removeEventListener('mousedown', closeModalOnOverlay);
 }
 
-const openModal = (modalWindow) => {
-    modalWindow.classList.add('popup_is-opened');
+const openModal = (modalWindow, validationConfig) => {
+    resetValidation(modalWindow, validationConfig);
+    modalWindow.classList.add('popup__is-opened');
+    document.addEventListener('keydown', closeModalWithEsc);
+    modalWindow.addEventListener('mousedown', closeModalOnOverlay);
+}
+
+const openModalWithoutValidation = (modalWindow) => {
+    modalWindow.classList.add('popup__is-opened');
     document.addEventListener('keydown', closeModalWithEsc);
     modalWindow.addEventListener('mousedown', closeModalOnOverlay);
 }
 
 
-
-export { openModal, closeModal }
+export { openModal, closeModal, openModalWithoutValidation }
