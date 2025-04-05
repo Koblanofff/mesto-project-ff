@@ -1,7 +1,4 @@
-import { openModalWithoutValidation } from "./modal";
-import { likeCard, dislikeCard } from "./api";
-
-const createCard = (cardObject, handleCardModal, userId, deleteCardModal, setCardToDelete) => {
+const createCard = (cardObject, handleCardModal, userId, handleDeleteCard, handleLikeButton) => {
     const cardTemplate = document.querySelector('#card-template').content;
     const newCard = cardTemplate.querySelector('.card').cloneNode(true);
 
@@ -20,10 +17,8 @@ const createCard = (cardObject, handleCardModal, userId, deleteCardModal, setCar
         deleteButton.remove();
     } else {
         deleteButton.addEventListener('click', () => {
-            openModalWithoutValidation(deleteCardModal);
-            setCardToDelete.element = newCard;
-            setCardToDelete.id = cardObject._id;
-        })
+            handleDeleteCard(newCard, cardObject._id);
+        });
     }
 
     const isLikedByCurrentUser = cardObject.likes.some((user) => user._id === userId);
@@ -33,26 +28,12 @@ const createCard = (cardObject, handleCardModal, userId, deleteCardModal, setCar
     }
 
     likeButton.addEventListener('click', () => {
-        const isLiked = likeButton.classList.contains('card__like-button_is-active');
+        handleLikeButton(likeButton, cardObject._id, numberOfLikes);
+    });
 
-        const setLike = isLiked ? dislikeCard : likeCard
-
-        setLike(cardObject._id)
-            .then((res) => {
-                toggleLikeButtonState(likeButton);
-                numberOfLikes.textContent = res.likes.length;
-            })
-            .catch((err) => {
-                console.log(`Ошибка при нажатии на кнопку лайк. ${err}`)
-            })
-        });
     cardImageElement.addEventListener('click', handleCardModal)
     
     return newCard;
-}
-
-const toggleLikeButtonState = (button) => {
-    button.classList.toggle('card__like-button_is-active');
 }
 
 export { createCard }

@@ -1,3 +1,5 @@
+import { data } from "autoprefixer"
+
 const config = {
     baseUrl: 'https://nomoreparties.co/v1/wff-cohort-35',
     headers: {

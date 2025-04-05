@@ -23,9 +23,7 @@ const closeModal = (modalWindow) => {
 
 const openModal = (modalWindow, validationConfig) => {
     resetValidation(modalWindow, validationConfig);
-    modalWindow.classList.add('popup__is-opened');
-    document.addEventListener('keydown', closeModalWithEsc);
-    modalWindow.addEventListener('mousedown', closeModalOnOverlay);
+    openModalWithoutValidation(modalWindow)
 }
 
 const openModalWithoutValidation = (modalWindow) => {

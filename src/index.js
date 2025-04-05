@@ -2,7 +2,7 @@ import './pages/index.css';
 import { createCard } from './components/card.js';
 import { openModal, closeModal, openModalWithoutValidation } from './components/modal.js';
 import { enableValidation } from './components/formValidation.js';
-import { getUserData, getInitialCards, editUserData, addNewCard, deleteCard, changeAvatar} from './components/api.js';
+import { getUserData, getInitialCards, editUserData, addNewCard, deleteCard, changeAvatar, dislikeCard, likeCard} from './components/api.js';
 
 const page = document.querySelector('.page'); 
 const popups = page.querySelectorAll('.popup');
@@ -29,8 +29,9 @@ const deleteCardSubmitButton = deleteCardModal.querySelector('.popup__button');
 const closeModalButtons = page.querySelectorAll('.popup__close');
 const profileAvatarButton = page.querySelector('.profile__image');
 const profileAvatarChangeModal = page.querySelector('.popup_type_change-avatar');
-const profileAvatarSubmitButton = profileAvatarChangeModal.querySelector('.popup__button');
-const newAvatarInput = profileAvatarChangeModal.querySelector('.popup__input');
+const profileAvatarChangeForm = profileAvatarChangeModal.querySelector('.popup__form')
+const profileAvatarSubmitButton = profileAvatarChangeForm.querySelector('.popup__button');
+const newAvatarInput = profileAvatarChangeForm.querySelector('.popup__input');
 
 const validationConfig = {
     formSelector: '.popup__form',
@@ -42,12 +43,6 @@ const validationConfig = {
 }; 
 
 let currentUserId;
-
-let currentCard = {
-    element: null,
-    id: null
-}
-
 
 popups.forEach((popup) => {
     popup.classList.add('popup_is-animated');
@@ -64,39 +59,6 @@ const handleCardModal = (e) => {
     cardModalImage.alt = cardTitle;
 }
 
-newCardButton.addEventListener('click', () => {
-    openModal(newCardModal, validationConfig)
-})
-
-const setUserData = (userData) => {
-    userData()
-        .then((res) => {
-            currentProfileName.textContent = res.name;
-            currentProfileDescription.textContent = res.about;
-            currentProfileImage.style.backgroundImage = `url(${res.avatar})`
-            currentUserId = res._id;
-        })
-}
-
-const renderInitialCards = (initialCards) => {
-    initialCards()
-        .then((data) => {
-            data.forEach((card) => {
-                const newCard = createCard(card, handleCardModal, currentUserId, deleteCardModal, currentCard);
-                cardsContainer.append(newCard);
-            })
-        })
-} 
-
-Promise.all([getUserData, getInitialCards])
-    .then(([userData, initialCards]) => {
-        setUserData(userData)
-        renderInitialCards(initialCards)
-    })
-    .catch((err) => {
-        console.log(`Ошибка при загрузки даненых пользователя и начальный карточек. ${err}`)
-    })
-
 const handleButtonLoadingState = (button, isLoading) => {
     if (isLoading) {
         button.dataset.originalText = button.textContent;
@@ -108,6 +70,38 @@ const handleButtonLoadingState = (button, isLoading) => {
     }
 }
 
+const handleDeleteCard = (cardElement, cardId) => {
+    openModalWithoutValidation(deleteCardModal);
+
+    deleteCardSubmitButton.addEventListener('click', () => {
+        if (cardElement && cardId) {
+            deleteCard(cardId)
+                .then(() => {
+                    cardElement.remove();
+                    closeModal(deleteCardModal);
+                })
+                .catch((err) => {
+                    console.log(`Ошибка при удалении карточки. ${err}`)
+                })
+        }
+    })
+} 
+
+const handleLikeCard = (button, cardId, numberOfLikesElement) => {
+    const isLiked = button.classList.contains('card__like-button_is-active');
+
+    const setLike = isLiked ? dislikeCard : likeCard;
+
+    setLike(cardId)
+        .then((res) => {
+            button.classList.toggle('card__like-button_is-active');
+            numberOfLikesElement.textContent = res.likes.length;
+        })
+        .catch((err) => {
+            console.log(`Ошибка при нажатии на кнопку лайк. ${err}`)
+        })
+}
+
 const handleNewCard = () => {
     const newLink = newCardInputImage.value;
     const newName = newCardInputTitle.value;
@@ -116,7 +110,7 @@ const handleNewCard = () => {
 
     addNewCard(newName, newLink)
         .then((newCardData) => {
-            const newCard = createCard(newCardData, handleCardModal, currentUserId, deleteCardModal, currentCard);
+            const newCard = createCard(newCardData, handleCardModal, currentUserId, handleDeleteCard, handleLikeCard);
             cardsContainer.prepend(newCard);
             closeModal(newCardModal);
             newCardForm.reset();
@@ -129,22 +123,27 @@ const handleNewCard = () => {
         })
 }
 
-newCardForm.addEventListener('submit', handleNewCard);
-
-deleteCardSubmitButton.addEventListener('click', () => {
-    if (currentCard.element && currentCard.id) {
-        deleteCard(currentCard.id)
-            .then(() => {
-                currentCard.element.remove();
-                currentCard.element = null;
-                currentCard.id = null;
-                closeModal(deleteCardModal);
-            })
-            .catch((err) => {
-                console.log(`Ошибка при удалении карточки. ${err}`)
-            })
-    }
+newCardButton.addEventListener('click', () => {
+    openModal(newCardModal, validationConfig)
 })
+
+Promise.all([getUserData(), getInitialCards()]) 
+    .then(([userData, initialCards]) => {
+        currentProfileName.textContent = userData.name; 
+        currentProfileDescription.textContent = userData.about; 
+        currentProfileImage.style.backgroundImage = `url(${userData.avatar})` 
+        currentUserId = userData._id; 
+
+        initialCards.forEach((card) => {
+            const newCard = createCard(card, handleCardModal, currentUserId, handleDeleteCard, handleLikeCard); 
+            cardsContainer.append(newCard); 
+        })
+    }) 
+    .catch((err) => { 
+        console.log(`Ошибка при загрузки даненых пользователя и начальный карточек. ${err}`) 
+    }) 
+
+newCardForm.addEventListener('submit', handleNewCard);
 
 editProfileButton.addEventListener('click', () => {
     openModal(editProfileModal, validationConfig);
@@ -187,6 +186,7 @@ profileAvatarSubmitButton.addEventListener('click', () => {
         .then((res) => {
             currentProfileImage.style.backgroundImage = `url(${res.avatar})`;
             closeModal(profileAvatarChangeModal);
+            profileAvatarChangeForm.reset();
         })
         .catch((err) => {
             console.log(`Ошибка при изменении аватара. ${err}`)
