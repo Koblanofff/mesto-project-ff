@@ -42,6 +42,11 @@ const validationConfig = {
     errorClass: 'popup__error_visible'
 }; 
 
+let currentCard = {
+    element: null,
+    id: null
+}
+
 let currentUserId;
 
 popups.forEach((popup) => {
@@ -72,19 +77,8 @@ const handleButtonLoadingState = (button, isLoading) => {
 
 const handleDeleteCard = (cardElement, cardId) => {
     openModalWithoutValidation(deleteCardModal);
-
-    deleteCardSubmitButton.addEventListener('click', () => {
-        if (cardElement && cardId) {
-            deleteCard(cardId)
-                .then(() => {
-                    cardElement.remove();
-                    closeModal(deleteCardModal);
-                })
-                .catch((err) => {
-                    console.log(`Ошибка при удалении карточки. ${err}`)
-                })
-        }
-    })
+    currentCard.element = cardElement;
+    currentCard.id = cardId;
 } 
 
 const handleLikeCard = (button, cardId, numberOfLikesElement) => {
@@ -144,6 +138,21 @@ Promise.all([getUserData(), getInitialCards()])
     }) 
 
 newCardForm.addEventListener('submit', handleNewCard);
+
+deleteCardSubmitButton.addEventListener('click', () => { 
+    if (currentCard.element && currentCard.id) { 
+        deleteCard(currentCard.id) 
+            .then(() => { 
+                currentCard.element.remove(); 
+                currentCard.element = null; 
+                currentCard.id = null; 
+                closeModal(deleteCardModal); 
+            }) 
+            .catch((err) => { 
+                console.log(`Ошибка при удалении карточки. ${err}`) 
+            }) 
+    } 
+})
 
 editProfileButton.addEventListener('click', () => {
     openModal(editProfileModal, validationConfig);
